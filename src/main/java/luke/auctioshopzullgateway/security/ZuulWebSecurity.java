@@ -9,10 +9,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 @EnableWebSecurity
 public class ZuulWebSecurity extends WebSecurityConfigurerAdapter {
 
-    private final JwtUtil jwtUtil;
+    private final ValidateJwtUtility validateJwtUtility;
 
-    public ZuulWebSecurity(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public ZuulWebSecurity(ValidateJwtUtility validateJwtUtility) {
+        this.validateJwtUtility = validateJwtUtility;
     }
 
     @Override
@@ -22,13 +22,13 @@ public class ZuulWebSecurity extends WebSecurityConfigurerAdapter {
 
         http.cors().and()
                 .authorizeRequests()
-                .antMatchers(HttpMethod.DELETE).hasRole("ADMIN")
-                .antMatchers(HttpMethod.PUT).hasRole("ADMIN")
-                .antMatchers(HttpMethod.POST, "/auctioshop-products/api/products/*").hasRole("ADMIN")
-                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/users").hasRole("ADMIN")
-                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/users/{id}").hasAnyRole("ADMIN", "USER")
-                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/order").hasRole("ADMIN")
+                .antMatchers(HttpMethod.DELETE).hasAuthority("ADMIN")
+                .antMatchers(HttpMethod.PUT).hasAuthority("ADMIN")
+                .antMatchers(HttpMethod.POST, "/auctioshop-products/api/products/*").hasAuthority("ADMIN")
+                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/users").hasAuthority("ADMIN")
+                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/users/{id}").hasAnyAuthority("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/auctioshop-ordersusers/api/order").hasAuthority("ADMIN")
                 .anyRequest().permitAll()
-                .and().addFilter(new AuthorizeUserFilter(authenticationManager(), jwtUtil));
+                .and().addFilter(new AuthorizationFilter(authenticationManager(), validateJwtUtility));
     }
 }

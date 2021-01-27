@@ -14,15 +14,19 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
 
-public class AuthorizeUserFilter extends BasicAuthenticationFilter {
+public class AuthorizationFilter extends BasicAuthenticationFilter {
 
-    private final JwtUtil jwtUtil;
+    private final ValidateJwtUtility validateJwtUtility;
 
-    public AuthorizeUserFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthorizationFilter(AuthenticationManager authenticationManager, ValidateJwtUtility validateJwtUtility) {
         super(authenticationManager);
-        this.jwtUtil = jwtUtil;
+        this.validateJwtUtility = validateJwtUtility;
     }
 
+    /**
+     * This filter method checks if the token send by the client is valid by parsing the token by the
+     * ValidateJwtUtility class.
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -52,9 +56,9 @@ public class AuthorizeUserFilter extends BasicAuthenticationFilter {
         Set<GrantedAuthority> authorities = null;
 
         try{
-            subject = jwtUtil.extractSubject(token);
-            credentials = jwtUtil.extractCredentials(token);
-            authorities = jwtUtil.extractAuthorities(token);
+            subject = validateJwtUtility.extractSubject(token);
+            credentials = validateJwtUtility.extractCredentials(token);
+            authorities = validateJwtUtility.extractAuthorities(token);
         }catch (Exception ex){
             isValid = false;
         }
@@ -62,13 +66,20 @@ public class AuthorizeUserFilter extends BasicAuthenticationFilter {
         if (subject == null || subject.isEmpty() || credentials == null || credentials.isEmpty() || authorities == null)
             isValid = false;
 
+        if (validateJwtUtility.isTokenExpired(token))
+            isValid = false;
+
         return isValid;
     }
 
+    /**
+     *
+     * @return UsernamePasswordAuthenticationToken used to set Spring security context.
+     */
     private UsernamePasswordAuthenticationToken getAuthenticationToken(String token) {
         return new UsernamePasswordAuthenticationToken(
-                jwtUtil.extractSubject(token),
-                jwtUtil.extractCredentials(token),
-                jwtUtil.extractAuthorities(token));
+                validateJwtUtility.extractSubject(token),
+                validateJwtUtility.extractCredentials(token),
+                validateJwtUtility.extractAuthorities(token));
     }
 }
