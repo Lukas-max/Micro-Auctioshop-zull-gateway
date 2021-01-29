@@ -39,7 +39,7 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
 
         String token = authHeader.replace("Bearer ", "");
         if (!validateToken(token)){
-            chain.doFilter(request, response);
+            response.sendError(401, "Nie ważny token autoryzacyjny. Zaloguj się ponownie.");
             return;
         }
 
